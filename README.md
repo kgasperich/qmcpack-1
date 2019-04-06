@@ -1,1 +1,0 @@
-# QMCPACK_ff
