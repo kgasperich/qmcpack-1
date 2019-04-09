@@ -1,5 +1,5 @@
 ==============
-QmcChem Module
+QMCPACK Module
 ==============
 
 For multi-state calculations, to extract state 2 use:
