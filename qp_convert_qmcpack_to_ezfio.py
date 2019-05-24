@@ -411,7 +411,7 @@ IonName=dict([('H',1),  ('He',2),  ('Li',3),('Be',4),  ('B', 5),  ('C', 6),  ('N
 
 import h5py
 from collections import defaultdict
-title="QMC"
+title="QP2QMCACK"
 H5_qmcpack=h5py.File(title+'.h5','w')
 
 groupApp=H5_qmcpack.create_group("application")
