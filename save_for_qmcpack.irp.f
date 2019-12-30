@@ -7,7 +7,7 @@ program qmcpack
   integer :: i,j
   read_wf = .True.
   TOUCH read_wf
-  call save_wavefunction
+  call save_wavefunction_qmcpack
   do j=1,ao_prim_num_max
     do i=1,ao_num
       ao_coef(i,j) = ao_coef(i,j) * ao_coef_normalization_factor(i)
@@ -21,6 +21,6 @@ program qmcpack
   enddo
   call save_mos
   call system('rm '//trim(ezfio_filename)//'/mo_basis/ao_md5')
-  call system('$QP_ROOT/src/QMCPack/qp_convert_qmcpack_to_ezfio.py '//trim(ezfio_filename))
+  call system('$QP_ROOT/src/qmcpack/qp_convert_qmcpack_to_ezfio.py '//trim(ezfio_filename))
 
 end
