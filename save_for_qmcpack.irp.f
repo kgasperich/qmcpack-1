@@ -24,3 +24,19 @@ program qmcpack
   call system('$QP_ROOT/src/qmcpack/qp_convert_qmcpack_to_ezfio.py '//trim(ezfio_filename))
 
 end
+
+subroutine save_wavefunction_qmcpack
+  implicit none
+  use bitmasks
+  BEGIN_DOC
+  !  Save the wave function into the |EZFIO| file
+  END_DOC
+
+  if (N_det < N_states) then
+    return
+  endif
+  if (mpi_master) then
+    call save_wavefunction_general(N_det,N_states,psi_det_sorted,size(psi_coef_sorted,1),psi_coef_sorted)
+  endif
+end
+
