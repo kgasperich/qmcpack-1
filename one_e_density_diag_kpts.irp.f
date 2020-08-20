@@ -1,4 +1,91 @@
 
+subroutine qmc_set_order_occ_kpts
+  implicit none
+  BEGIN_DOC
+  ! set mo ordering based on 1RDM diagonal elements
+  END_DOC
+  print*,'Reordering MOs by 1RDM diagonal elements'
+  PROVIDE one_e_dm_mo_gs_diag_kpts
+  double precision, allocatable :: tmp_occ(:)
+  integer, allocatable :: sorted_idx(:)
+  integer :: i,j,k
+
+  allocate(tmp_occ(mo_num),sorted_idx(mo_num))
+  tmp_occ = 0.d0
+
+  k=1
+  do j=1,kpt_num
+    do i=1,mo_num_per_kpt
+      !tmp_occ(k) = -one_e_dm_mo_gs_diag_kpts(i,j)
+      tmp_occ(i+(j-1)*mo_num_per_kpt) = -one_e_dm_mo_gs_diag_kpts(i,j)
+      sorted_idx(k)=k
+      k+=1
+    enddo
+  enddo
+
+  !print*,'unsorted occ'
+  !do i=1,mo_num
+  !  print*,i,tmp_occ(i)
+  !enddo
+  call dsort(tmp_occ,sorted_idx,mo_num)
+  !print*,'sorting by occ'
+  !do i=1,mo_num
+  !  print*,i,sorted_idx(i),tmp_occ(i)
+  !enddo
+  mo_coef_reorder_idx_kpts = sorted_idx
+  call ezfio_set_qmcpack_mo_coef_reorder_idx_kpts(sorted_idx)
+  !TOUCH mo_coef_reorder_idx_kpts
+
+end
+
+BEGIN_PROVIDER [ integer, mo_coef_reorder_idx_kpts , (mo_num) ]
+  implicit none
+  BEGIN_DOC
+! index of reordered |MO|s
+  END_DOC
+  integer :: i
+  logical                        :: has
+  PROVIDE ezfio_filename
+  if (mpi_master) then
+    if (size(mo_coef_reorder_idx_kpts) == 0) return
+
+    call ezfio_has_qmcpack_mo_coef_reorder_idx_kpts(has)
+    if (has) then
+      write(6,'(A)') '.. >>>>> [ IO READ: mo_coef_reorder_idx_kpts ] <<<<< ..'
+      call ezfio_get_qmcpack_mo_coef_reorder_idx_kpts(mo_coef_reorder_idx_kpts)
+    else
+      print *, 'qmcpack/mo_coef_reorder_idx_kpts not found in EZFIO file, not reordering'
+      do i=1,mo_num
+        mo_coef_reorder_idx_kpts(i)=i
+      enddo
+    endif
+  endif
+  IRP_IF MPI_DEBUG
+    print *,  irp_here, mpi_rank
+    call MPI_BARRIER(MPI_COMM_WORLD, ierr)
+  IRP_ENDIF
+  IRP_IF MPI
+    include 'mpif.h'
+    integer :: ierr
+    call MPI_BCAST( mo_coef_reorder_idx_kpts, (mo_num), MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+    if (ierr /= MPI_SUCCESS) then
+      stop 'Unable to read mo_coef_reorder_idx_kpts with MPI'
+    endif
+  IRP_ENDIF
+
+  call write_time(6)
+
+END_PROVIDER
+
+
+BEGIN_PROVIDER [ double precision, one_e_dm_mo_gs_diag_kpts, (mo_num_per_kpt,kpt_num) ]
+  implicit none
+  BEGIN_DOC
+  ! diagonal elements of 1rdm for state 1
+  END_DOC
+  one_e_dm_mo_gs_diag_kpts = one_e_dm_mo_alpha_diag_kpts(:,:,1) + one_e_dm_mo_beta_diag_kpts(:,:,1)
+END_PROVIDER
+
  BEGIN_PROVIDER [ double precision, one_e_dm_mo_alpha_diag_kpts, (mo_num_per_kpt,kpt_num,N_states) ]
 &BEGIN_PROVIDER [ double precision, one_e_dm_mo_beta_diag_kpts, (mo_num_per_kpt,kpt_num,N_states) ]
   implicit none
